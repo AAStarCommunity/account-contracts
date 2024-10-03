@@ -28,6 +28,7 @@ contract BLSLightAccount is LightAccount {
 
     /// @dev keccak256(abi.encode(uint256(keccak256("bls_light_account_v1.storage")) - 1)) & ~bytes32(uint256(0xff));
     bytes32 private constant _BLS_STORAGE_POSITION = 0x3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e00;
+    address public _owner;
 
     event BLSPublicKeySet(bytes32 indexed blsPublicKey);
 
@@ -39,7 +40,9 @@ contract BLSLightAccount is LightAccount {
     /// @param owner_ The initial owner of the account
     /// @param blsPublicKey_ The BLS public key for this account
     function initialize(address owner_, bytes32 blsPublicKey_) external initializer {
-        super._initialize(owner_);
+        // super._initialize(owner_);
+        require(_owner == address(0), "Already initialized");
+        _owner = owner_;
         _setBlsPublicKey(blsPublicKey_);
     }
 
