@@ -1,9 +1,6 @@
-[submodule "light-account"]
-	path = light-account
-	url = https://github.com/AAStarCommunity/light-account
 [submodule "lib/forge-std"]
 	path = lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
-[submodule "account-abstraction"]
-	path = account-abstraction
-	url = https://github.com/eth-infinitism/account-abstraction/
+[submodule "lib/light-account"]
+	path = lib/light-account
+	url = https://github.com/alchemyplatform/light-account.git
