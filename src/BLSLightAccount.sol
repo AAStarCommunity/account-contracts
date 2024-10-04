@@ -37,6 +37,28 @@ contract BLSLightAccount is BaseLightAccount, CustomSlotInitializable {
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
 
+    bytes32 private blsPublicKey;
+
+    enum ExtendSignatureType {
+        EOA,
+        CONTRACT,
+        CONTRACT_WITH_ADDR,
+        reserve_3,
+        reserve_4,
+        reserve_5,
+        reserve_6,
+        reserve_7,
+        reserve_8,
+        reserve_9,
+        reserve_10,
+        reserve_11,
+        reserve_12,
+        reserve_13,
+        reserve_14,
+        reserve_15,
+        BLS
+    }
+
     /// @dev The version used for namespaced storage is not linked to the release version of the contract. Storage
     /// versions will be updated only when storage layout changes are made.
     /// keccak256(abi.encode(uint256(keccak256("blslight_account_v1.storage")) - 1)) & ~bytes32(uint256(0xff));
@@ -63,6 +85,11 @@ contract BLSLightAccount is BaseLightAccount, CustomSlotInitializable {
     /// @dev The new owner is not a valid owner (e.g., `address(0)`, the account itself, or the current owner).
     error InvalidOwner(address owner);
 
+    /// @notice Emitted when the BLS public key is updated.
+    /// @param oldPublicKey The old BLS public key.
+    /// @param newPublicKey The new BLS public key.
+    event BlsPublicKeyUpdated(bytes32 indexed oldPublicKey, bytes32 indexed newPublicKey);
+
     constructor(IEntryPoint entryPoint_) CustomSlotInitializable(_INITIALIZABLE_STORAGE_POSITION) {
         _ENTRY_POINT = entryPoint_;
         // _disableInitializers();
@@ -74,8 +101,20 @@ contract BLSLightAccount is BaseLightAccount, CustomSlotInitializable {
     /// implementation of LightAccount must be deployed with the new entry point address, and then `upgradeToAndCall`
     /// must be called to upgrade the implementation.
     /// @param owner_ The initial owner of the account.
-    function initialize(address owner_) external initializer {
+    function initialize(address owner_, bytes32 blsPublicKey_) external initializer {
         _initialize(owner_);
+        blsPublicKey = blsPublicKey_;
+    }
+
+    function setBlsPublicKey(bytes32 newBlsPublicKey) external {
+        require(msg.sender == owner(), "Only authorized accounts can perform this action");
+        bytes32 oldPublicKey = blsPublicKey;
+        blsPublicKey = newBlsPublicKey;
+        emit BlsPublicKeyUpdated(oldPublicKey, newBlsPublicKey);
+    }
+
+    function getBlsPublicKey() public view returns (bytes32) {
+        return blsPublicKey;
     }
 
     /// @notice Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current
@@ -126,17 +165,33 @@ contract BLSLightAccount is BaseLightAccount, CustomSlotInitializable {
             revert InvalidSignatureType();
         }
         uint8 signatureType = uint8(userOp.signature[0]);
-        if (signatureType == uint8(SignatureType.EOA)) {
+        if (signatureType == uint8(ExtendSignatureType.EOA)) {
             // EOA signature
             bytes32 signedHash = userOpHash.toEthSignedMessageHash();
             bytes memory signature = userOp.signature[1:];
             return _successToValidationData(_isValidEOAOwnerSignature(signedHash, signature));
-        } else if (signatureType == uint8(SignatureType.CONTRACT)) {
+        } else if (signatureType == uint8(ExtendSignatureType.CONTRACT)) {
             // Contract signature without address
             bytes memory signature = userOp.signature[1:];
             return _successToValidationData(_isValidContractOwnerSignatureNow(userOpHash, signature));
+        } else if (signatureType == uint8(ExtendSignatureType.BLS)) {
+            // BLS signature
+            bytes memory signature = userOp.signature[1:];
+            return _successToValidationData(_isValidBlsSignature(userOp, signature));
         }
         revert InvalidSignatureType();
+    }
+
+    /// @dev Validates a BLS signature
+    function _isValidBlsSignature(PackedUserOperation calldata userOp, bytes memory signature)
+        internal
+        view
+        returns (bool)
+    {
+        // TODO: Implement BLS signature validation
+        // This will require an external library or precompile for BLS operations
+        // For now, we'll just revert to indicate it's not implemented
+        revert("BLS signature validation not implemented");
     }
 
     /// @notice Check if the signature is a valid by the EOA owner for the given digest.

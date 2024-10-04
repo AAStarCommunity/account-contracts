@@ -16,23 +16,34 @@ contract BLSLightAccountTest is Test {
 
     function testInitialize() public {
         address owner = address(this);
+        bytes32 blsPublicKey = keccak256(bytes("blsPublicKey"));
 
-        // 初始化合约
-        account.initialize(owner);
+        account.initialize(owner, blsPublicKey);
 
-        // 检查初始化后的状态
         assertEq(account.owner(), owner);
+        assertEq(account.getBlsPublicKey(), blsPublicKey);
     }
 
     function testInitializeRevert() public {
         address owner = address(this);
+        bytes32 blsPublicKey = keccak256(bytes("blsPublicKey"));
 
-        // 第一次初始化合约
-        account.initialize(owner);
+        account.initialize(owner, blsPublicKey);
 
-        // 尝试再次初始化合约，应该失败
         bytes memory errorSelector = abi.encodeWithSelector(CustomSlotInitializable.InvalidInitialization.selector);
         vm.expectRevert(errorSelector);
-        account.initialize(owner);
+        account.initialize(owner, blsPublicKey);
+    }
+
+    function testSetBlsPublicKey() public {
+        address owner = address(this);
+        bytes32 blsPublicKey = keccak256(bytes("blsPublicKey"));
+        bytes32 newBlsPublicKey = keccak256(bytes("newBlsPublicKey"));
+
+        account.initialize(owner, blsPublicKey);
+
+        account.setBlsPublicKey(newBlsPublicKey);
+
+        assertEq(account.getBlsPublicKey(), newBlsPublicKey);
     }
 }
