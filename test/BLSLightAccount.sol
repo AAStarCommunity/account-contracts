@@ -19,7 +19,7 @@ contract BLSLightAccountTest is Test {
 
         // 初始化合约
         account.initialize(owner);
-        
+
         // 检查初始化后的状态
         assertEq(account.owner(), owner);
     }
@@ -29,7 +29,7 @@ contract BLSLightAccountTest is Test {
 
         // 第一次初始化合约
         account.initialize(owner);
-        
+
         // 尝试再次初始化合约，应该失败
         bytes memory errorSelector = abi.encodeWithSelector(CustomSlotInitializable.InvalidInitialization.selector);
         vm.expectRevert(errorSelector);
