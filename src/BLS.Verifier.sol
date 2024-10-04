@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 import {BLSOpen} from "../lib/BLSOpen.sol";
 
-contract BLSLightAccount {
+contract BLSVerifier {
     uint256[4] private publicKey;
     address private owner;
 
@@ -34,5 +34,9 @@ contract BLSLightAccount {
 
     function setBlsPublicKey(uint256[4] memory newPublicKey) public onlyOwner {
         publicKey = newPublicKey;
+    }
+
+    function getPublicKey() public view returns (uint256[4] memory) {
+        return publicKey;
     }
 }
