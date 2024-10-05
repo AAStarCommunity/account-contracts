@@ -48,8 +48,14 @@ contract BLSVerifierTest is Test {
     }
 
     function testValidateUserOpSignature() public {
-        uint256[2] memory message = [uint256(1), uint256(2)];
-        uint256[2] memory signature = [uint256(3), uint256(4)];
+        uint256[2] memory message = [
+            uint256(6382179),
+            uint256(0)            
+        ];
+        uint256[2] memory signature = [
+            uint256(79898048916366891423109317880192719895075503885619475743155465631070124794406),
+            uint256(0)
+        ];
         uint256[4] memory publicKey = [uint256(5), uint256(6), uint256(7), uint256(8)];
         blsVerifier.setBlsPublicKey(publicKey);
         bool isValid = blsVerifier.validateUserOpSignature(message, signature);
