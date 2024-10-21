@@ -1,37 +1,43 @@
-import { ethers } from 'ethers';
+import { solG1, solG2 } from "@thehubbleproject/bls/dist/mcl";
+import { aggregate, BlsSignerFactory } from "@thehubbleproject/bls/dist/signer";
+import { formatBytes32String } from "ethers/lib/utils";
 
-function base64ToBytes(base64: string): Buffer {
-    return Buffer.from(base64, 'base64');
+function hexToUint8Array(h: any) {
+  return Uint8Array.from(Buffer.from(h.slice(2), "hex"));
 }
-
-function bytesToUint256Array(bytes: Buffer): string[] {
-    const uint256Array: string[] = [];
-    for (let i = 0; i < bytes.length; i += 32) {
-        const chunk = bytes.subarray(i, i + 32);
-        uint256Array.push(ethers.toBigInt(chunk).toString());
-    }
-    return uint256Array;
+function uint8ArrayToHex(array: Uint8Array): string {
+  return (
+    "0x" +
+    Array.from(array)
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("")
+  );
 }
-
 // 立即执行的异步函数
 (async () => {
+  const DOMAIN = hexToUint8Array(
+    "0x0000000000000000000000000000000000000000000000000000000000000021"
+  );
 
-    // 示例数据
-    const pubkeyBase64 = 'shxvsYSiVXG/HoCOSO1RFeYzeMBvCxVV/bEPzTk4CH9cZz73ejD5LhrzHIw40UST';
-    const msgBase64 = 'YWJj';
-    const sigBase64 = 'sKSxcK9kYEpZ0KJbbCbyMSHOjcf6ffauBjVD4TIYYiZaDh69pPugobhxMrj358fRAXt+NdXUkP9HfmqRXPSub8xfVi6alfZ8bGbUvWOK2KN/4S/OLPQaO+BYWZKY2/SF';
+  const hexString = uint8ArrayToHex(DOMAIN);
+  console.log({ domain: hexString });
+  const factory = await BlsSignerFactory.new();
+  const rawMessages = ["Hello", "World", "Are", "You", "Ok"];
+  const signers: any[] = [];
+  const messages: string[] = [];
+  const pubkeys: solG2[] = [];
+  const signatures: solG1[] = [];
+  for (const raw of rawMessages) {
+    const message = formatBytes32String(raw);
+    const signer = factory.getSigner(DOMAIN);
+    const signature = signer.sign(message);
+    signers.push(signer);
+    messages.push(message);
+    pubkeys.push(signer.pubkey);
+    signatures.push(signature);
+  }
+  const aggSignature = aggregate(signatures);
 
-
-    // 解码并转换为 uint256 数组
-    const pubkeyBytes = base64ToBytes(pubkeyBase64);
-    const msgBytes = base64ToBytes(msgBase64);
-    const sigBytes = base64ToBytes(sigBase64);
-
-    const pubkeyUint256Array = bytesToUint256Array(pubkeyBytes);
-    const msgUint256Array = bytesToUint256Array(msgBytes);
-    const sigUint256Array = bytesToUint256Array(sigBytes);
-
-    console.log('Public Key:', pubkeyUint256Array);
-    console.log('Message:', msgUint256Array);
-    console.log('Signature:', sigUint256Array);
+  console.log({ sig: aggSignature, pubkeys: pubkeys, message: messages });
+  console.log(signers[0].verifyMultiple(aggSignature, pubkeys, messages));
 })();

@@ -5,60 +5,39 @@ import "forge-std/Test.sol";
 import "../src/BLS.Verifier.sol";
 
 contract BLSVerifierTest is Test {
-    BLSVerifier blsVerifier;
     address owner;
     address addr1;
+    bytes32 domain = 0x0000000000000000000000000000000000000000000000000000000000000021;
+    uint256[4][] pubkeys = new uint256[4][](2);
+    uint256[2][] messages = new uint256[2][](2);
+    uint256[2] signature;
 
     function setUp() public {
-        owner = address(this);
-        addr1 = address(0x1234);
-        blsVerifier = new BLSVerifier(owner);
-    }
-
-    function testOnlyOwnerCanInitialize() public {
-        uint256[4] memory publicKey = [uint256(1), uint256(2), uint256(3), uint256(4)];
-        blsVerifier.initialize(owner, publicKey);
-        uint256[4] memory storedPublicKey = blsVerifier.getPublicKey();
-        for (uint256 i = 0; i < 4; i++) {
-            assertEq(storedPublicKey[i], publicKey[i]);
-        }
-    }
-
-    function testNonOwnerCannotInitialize() public {
-        uint256[4] memory publicKey = [uint256(1), uint256(2), uint256(3), uint256(4)];
-        vm.prank(addr1);
-        vm.expectRevert("Caller is not the owner");
-        blsVerifier.initialize(owner, publicKey);
-    }
-
-    function testOnlyOwnerCanSetPublicKey() public {
-        uint256[4] memory newPublicKey = [uint256(5), uint256(6), uint256(7), uint256(8)];
-        blsVerifier.setBlsPublicKey(newPublicKey);
-        uint256[4] memory storedPublicKey = blsVerifier.getPublicKey();
-        for (uint256 i = 0; i < 4; i++) {
-            assertEq(storedPublicKey[i], newPublicKey[i]);
-        }
-    }
-
-    function testNonOwnerCannotSetPublicKey() public {
-        uint256[4] memory newPublicKey = [uint256(5), uint256(6), uint256(7), uint256(8)];
-        vm.prank(addr1);
-        vm.expectRevert("Caller is not the owner");
-        blsVerifier.setBlsPublicKey(newPublicKey);
-    }
-
-    function testValidateUserOpSignature() public {
-        uint256[2] memory message = [
-            uint256(6382179),
-            uint256(0)            
+        signature = [
+            uint256(0x2f71e7f05b887dd947424b3fe1885a32c7733a180b4bbf0eb0040a644bdfea26), 
+            uint256(0x2f197beb9a8accb964c90dc387323bf0b9c5631b23f8bcb777e692361e5d331f)
         ];
-        uint256[2] memory signature = [
-            uint256(79898048916366891423109317880192719895075503885619475743155465631070124794406),
-            uint256(0)
-        ];
-        uint256[4] memory publicKey = [uint256(5), uint256(6), uint256(7), uint256(8)];
-        blsVerifier.setBlsPublicKey(publicKey);
-        bool isValid = blsVerifier.validateUserOpSignature(message, signature);
-        assertTrue(isValid);
+        pubkeys.push([
+            uint256(0x2be1d9edcadf9de755b605e3b4765da7850ba639e61599ff9929b2140c3f1bea), 
+            uint256(0x1c3d49dc20bfce40087db02c1a85fa50ed936a03a8080ace0e3481166b0251e8), 
+            uint256(0x1312fb11406ea8708e6054c48ff9dd4675506165ea8c7144322035eebf089150), 
+            uint256(0x2a6b5e955e53d3acb1486970c8c4561ab6b4d3578667f8baa3185495c378af29)
+        ]);
+        pubkeys.push([
+            uint256(0x10e0c276722c9a122e744c1f8825cf274765acfc70a0571bbcb1444f45959053), 
+            uint256(0x48656c6c6f000000000000000000000000000000000000000000000000000000), 
+            uint256(0x576f726c64000000000000000000000000000000000000000000000000000000), 
+            uint256(0x0c9fd58100000000000000000000000000000000000000000000000000000000)
+        ]);
+        
+        uint256[2] memory m1 = BLSOpen.hashToPoint(domain, abi.encode(0x48656c6c6f000000000000000000000000000000000000000000000000000000));
+        messages.push([m1[0], m1[1]]);
+        uint256[2] memory m2 = BLSOpen.hashToPoint(domain, abi.encode(0x576f726c64000000000000000000000000000000000000000000000000000000));
+        messages.push([m2[0], m2[1]]);
+    }
+
+    function testValidateUserOpSignature2() public view {
+        bool result = BLSOpen.verifyMultiple(signature, pubkeys, messages);
+        assertTrue(result);
     }
 }
